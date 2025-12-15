@@ -1,168 +1,127 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Imposter Game</title>
-
-<style>
-body {
-  margin: 0;
-  background: #0b0e1a;
-  color: white;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
-  text-align: center;
-}
-.screen {
-  display: none;
-  min-height: 100vh;
-  padding: 20px;
-}
-.active { display: block; }
-.card {
-  background: #161a33;
-  border-radius: 16px;
-  padding: 20px;
-  max-width: 400px;
-  margin: auto;
-}
-button, select, input {
-  width: 100%;
-  padding: 14px;
-  margin-top: 12px;
-  font-size: 16px;
-  border-radius: 12px;
-  border: none;
-}
-button {
-  background: #6c7cff;
-  color: white;
-}
-.lock {
-  font-size: 22px;
-  letter-spacing: 4px;
-}
-</style>
-</head>
-
-<body>
-
-<div id="setup" class="screen active">
-  <div class="card">
-    <h1>IMPOSTER</h1>
-
-    <input id="players" type="number" min="3" max="10" value="5">
-    
-    <select id="imposters">
-      <option value="1">1 Imposter</option>
-      <option value="2">2 Imposters</option>
-    </select>
-
-    <select id="category"></select>
-
-    <button id="startBtn">Start Game</button>
-  </div>
-</div>
-
-<div id="pass" class="screen">
-  <div class="card">
-    <h2 id="passText"></h2>
-    <div class="lock">🔒 🔒 🔒</div>
-    <button id="revealBtn">Reveal</button>
-  </div>
-</div>
-
-<div id="reveal" class="screen">
-  <div class="card">
-    <h2 id="playerTitle"></h2>
-    <h1 id="role"></h1>
-    <h2 id="word"></h2>
-    <button id="nextBtn">Hide & Pass</button>
-  </div>
-</div>
-
-<div id="end" class="screen">
-  <div class="card">
-    <h1>Discuss & Vote</h1>
-    <button onclick="location.reload()">New Game</button>
-  </div>
-</div>
-
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
 const categories = {
-  "Football Players": ["Messi","Ronaldo","Mbappe","Haaland"],
-  "Football 2": ["Panav Singh"],
-  "Cities": ["Toronto","London","Paris","Tokyo"],
-  "Countries": ["Canada","Brazil","France","Japan"],
-  "Clash Royale": ["Mega Knight","Hog Rider","Pekka"],
-  "Fun": ["Worst excuse","Biggest lie","Most overrated thing"]
+  "Soccer Players": [
+    "Lionel Messi","Cristiano Ronaldo","Neymar","Mbappe","Haaland","De Bruyne","Salah","Modric","Benzema","Lewandowski",
+    "Kane","Bellingham","Vinicius Jr","Rodri","Bernardo Silva","Griezmann","Dybala","Son","Mane","Mahrez",
+    "Bruno Fernandes","Rashford","Saka","Foden","Pedri","Gavi","Musiala","Osimhen","Hakimi","Davies",
+    "Van Dijk","Ruben Dias","Courtois","Neuer","Ter Stegen","Alisson","Ederson","Panav Singh 711","Sayed Amir Mohamd","Giroud",
+    "Suarez","Cavani","Ibrahimovic","Pogba","Kante","Casemiro","Odegaard","Rice","Saliba","Martinelli"
+  ],
+
+  "Football 2": [
+    "Panav Singh"
+  ],
+
+  "Famous Football Clubs": [
+    "Real Madrid","Barcelona","Man United","Man City","Liverpool","Arsenal","Chelsea","Tottenham","Bayern","Dortmund",
+    "PSG","Juventus","AC Milan","Inter Milan","Napoli","Roma","Atletico Madrid","Sevilla","Ajax","PSV",
+    "Porto","Benfica","Sporting","Celtic","Rangers","Galatasaray","Fenerbahce","Besiktas","Al Hilal","Al Nassr",
+    "Flamengo","Palmeiras","Boca Juniors","River Plate","Santos","Corinthians","Monterrey","Club America","LA Galaxy","Inter Miami",
+    "Toronto FC","Vancouver Whitecaps","NYCFC","RB Leipzig","RB Salzburg","Atalanta","Lyon","Marseille","Fiorentina","West Ham"
+  ],
+
+  "Clash Royale Cards": [
+    "Knight","Archers","Goblins","Giant","PEKKA","Wizard","Musketeer","Valkyrie","Mini PEKKA","Hog Rider",
+    "Balloon","Baby Dragon","Inferno Dragon","Electro Dragon","Skeleton Army","Mega Knight","Royal Giant","Elite Barbarians",
+    "Prince","Dark Prince","Bandit","Royal Ghost","Golden Knight","Skeleton King","Mighty Miner","Monk",
+    "Firecracker","Sparky","Electro Wizard","Ice Wizard","Magic Archer","Mother Witch","Night Witch",
+    "Rocket","Fireball","Lightning","Freeze","Poison","Tornado","Mirror"
+  ],
+
+  "Famous Cities": [
+    "New York","Toronto","London","Paris","Berlin","Rome","Madrid","Barcelona","Dubai","Tokyo",
+    "Seoul","Singapore","Istanbul","Cairo","Riyadh","Jeddah","Abu Dhabi","Mumbai","Karachi","Sydney"
+  ],
+
+  "Famous Countries": [
+    "Canada","USA","Mexico","Brazil","Argentina","UK","France","Germany","Italy","Spain",
+    "Portugal","Netherlands","Belgium","Japan","South Korea","India","Pakistan","Saudi Arabia","UAE","Australia"
+  ]
 };
 
+/* Populate categories */
 const categorySelect = document.getElementById("category");
 Object.keys(categories).forEach(c => {
-  let o = document.createElement("option");
+  const o = document.createElement("option");
   o.value = c;
   o.textContent = c;
   categorySelect.appendChild(o);
 });
 
 let totalPlayers = 0;
-let currentPlayer = 1;
 let roles = [];
 let word = "";
+let fakeWord = "";
+let current = 1;
 
+/* SCREEN SWITCH */
 function show(id) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
 }
 
-document.getElementById("startBtn").onclick = () => {
+/* START GAME */
+window.startGame = function () {
   totalPlayers = +players.value;
   const imp = +imposters.value;
-
-  if (imp >= totalPlayers) {
-    alert("Too many imposters");
-    return;
-  }
+  if (imp >= totalPlayers) return alert("Too many imposters");
 
   const list = categories[category.value];
   word = list[Math.floor(Math.random() * list.length)];
 
-  roles = Array(totalPlayers).fill("Crewmate");
-  let count = 0;
-  while (count < imp) {
-    let r = Math.floor(Math.random() * totalPlayers);
-    if (roles[r] !== "Imposter") {
-      roles[r] = "Imposter";
-      count++;
-    }
-  }
+  /* Troll Mode: fake word */
+  do {
+    fakeWord = list[Math.floor(Math.random() * list.length)];
+  } while (fakeWord === word);
 
-  passText.textContent = "Pass to Player 1";
-  show("pass");
+  roles = Array(totalPlayers).fill("Crewmate");
+  let picked = [];
+  while (picked.length < imp) {
+    let r = Math.floor(Math.random() * totalPlayers);
+    if (!picked.includes(r)) picked.push(r);
+  }
+  picked.forEach(i => roles[i] = "Imposter");
+
+  current = 1;
+  handoverText.textContent = "Pass to Player 1";
+  show("handover");
 };
 
-document.getElementById("revealBtn").onclick = () => {
-  playerTitle.textContent = "Player " + currentPlayer;
-  const r = roles[currentPlayer - 1];
+/* REVEAL */
+window.reveal = function () {
+  playerTitle.textContent = "Player " + current;
+  const r = roles[current - 1];
   role.textContent = r;
-  word.textContent = r === "Imposter" ? "???" : word;
+
+  if (r === "Imposter") {
+    word.textContent = fakeWord;
+    hint.textContent = "You have a DIFFERENT word. Act normal 😈";
+  } else {
+    word.textContent = word;
+    hint.textContent = "Do NOT say the word";
+  }
+
   show("reveal");
 };
 
-document.getElementById("nextBtn").onclick = () => {
-  currentPlayer++;
-  if (currentPlayer > totalPlayers) {
-    show("end");
+/* NEXT PLAYER */
+window.nextPlayer = function () {
+  current++;
+  if (current > totalPlayers) {
+    show("play");
   } else {
-    passText.textContent = "Pass to Player " + currentPlayer;
-    show("pass");
+    handoverText.textContent = "Pass to Player " + current;
+    show("handover");
   }
+};
+
+/* RESET */
+window.resetGame = function () {
+  current = 1;
+  show("setup");
 };
 
 });
 </script>
-
-</body>
-</html>
